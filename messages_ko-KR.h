@@ -1,0 +1,21 @@
+#define programName "회원 관리 프로그램"
+
+#define string_printMemberList "회원 명단 보기"
+#define string_addMember "회원 등록하기"
+#define string_removeMember "회원 삭제하기"
+#define string_editMember "회원 정보 수정하기"
+#define string_saveMemberData "회원 정보 저장하기"
+#define string_searchMember "회원 검색하기"
+#define string_exitProgram "끝내기"
+
+#define string_memberId "회원 아이디"
+#define string_memberName "회원 이름"
+#define string_memberAddress "회원 주소"
+#define string_memberPhone "휴대폰 번호"
+
+#define wrongInput "잘못된 입력입니다!"
+#define inputNameHelp "홍길동 형태로 입력하세요!"
+#define inputPhoneHelp "010-1234-5678 형태로 입력하세요!"
+#define nameNotKorean "이름은 한글 문자로만 이루어져야 합니다!"
+#define phoneNotDigit "전화번호는 숫자와 -로만 이루어져야 합니다!"
+#define phoneDuplicated "중복된 전화번호입니다!"
