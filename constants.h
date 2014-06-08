@@ -16,4 +16,7 @@
 #define PHONE_NOT_DIGIT 2
 #define PHONE_DUPLICATED 3
 
+// exception code
+#define KEY_IS_DUPLICATED 1
+
 #endif

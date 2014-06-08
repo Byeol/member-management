@@ -1,13 +1,31 @@
-#include "common.h"
+#include "main.h"
 
-void createNewMember();
-void saveMemberDataToFile();
-void exitProgram();
-
-int isDataSaved = 0;
+static int isDataSaved = 0;
 
 int main()
 {
+	funcPointer func_list[7] =
+	{
+		printAllMember,
+		createNewMember,
+		removeMemberByInformation,
+		editMemberByInformation,
+		saveMemberDataToFile,
+		searchMember,
+		exitProgram
+	};
+
+	char * string_list[7] =
+	{
+		string_printMemberList,
+		string_addMember,
+		string_removeMember,
+		string_editMember,
+		string_saveMemberData,
+		string_searchMember,
+		string_exitProgram
+	};
+
 	int op;
 
 	setConsolePreference();
@@ -18,86 +36,84 @@ int main()
 		clearScreen();
 		printf("%s\n\n", programName);
 
-		printf("1. %s\n", string_printMemberList);
-		printf("2. %s\n", string_addMember);
-		printf("3. %s\n", string_removeMember);
-		printf("4. %s\n", string_editMember);
-		printf("5. %s\n", string_saveMemberData);
-		printf("6. %s\n", string_searchMember);
-		printf("7. %s\n", string_exitProgram);
+		op = getChoice(string_list, sizeof(string_list) / sizeof(char *));
+		if (op == -1)
+			continue;
 
-		scanf(" %d", &op);
-
+		void(*opFunc)() = func_list[op - 1];
 		clearScreen();
-		switch (op)
-		{
-		case 1:
-			printMemberList();
-			break;
-		case 2:
-			createNewMember();
-			break;
-		case 5:
-			saveMemberDataToFile();
-			break;
-		case 7:
-			exitProgram();
-			break;
-		case 3: case 4: case 6:
-			printf("not implemented yet!\n");
-			getch();
-			break;
-		}
+		opFunc();
 	}
+}
+
+void printAllMember()
+{
+	PERSONLIST members = getMemberList();
+
+	if (!members.memberCnt)
+	{
+		printf("%s\n", message_nobodyExist);
+		getch();
+		return;
+	}
+
+	printMemberList(&members);
 }
 
 void createNewMember()
 {
-	int res;
-
 	PERSON * newMember;
 	newMember = malloc(sizeof(PERSON));
 
 	newMember->memberId = getMemberIdMax()+1;
+	printf("%s: %d\n", string_memberId, newMember->memberId);
 
-	printf("회원 번호: %d\n", newMember->memberId);
-
-	printf("이름: ");
-	while (res = getString(newMember->name, name_maxchar, nameCheck))
-	{
-		switch (res)
-		{
-		case NAME_NOT_KOREAN:
-			printf("%s\n", nameNotKorean);
-			printf("%s\n", inputNameHelp);
-			break;
-		}
-	}
-
-	printf("주소: ");
-	getString(newMember->address, address_maxchar, NULL);
-
-	printf("전화번호: ");
-	while (res = getString(newMember->phone, phone_maxchar, phoneCheck))
-	{
-		switch (res)
-		{
-		case WRONG_INPUT:
-			printf("%s\n", wrongInput);
-			printf("%s\n", inputPhoneHelp);
-			break;
-		case PHONE_NOT_DIGIT:
-			printf("%s\n", phoneNotDigit);
-			printf("%s\n", inputPhoneHelp);
-			break;
-		case PHONE_DUPLICATED:
-			printf("%s\n", phoneDuplicated);
-			break;
-		}
-	}
-
+	getMemberInformation(newMember);
 	addMember(newMember);
 	isDataSaved = 0;
+}
+
+void removeMemberByInformation()
+{
+	PERSON * member = getMemberByInformation();
+
+	if (!member)
+	{
+		printf("%s\n", message_nobodyMatched);
+		getch();
+		return;
+	}
+
+	removeMember(member);
+}
+
+void editMemberByInformation()
+{
+	PERSON * member = getMemberByInformation();
+
+	if (!member)
+	{
+		printf("%s\n", message_nobodyMatched);
+		getch();
+		return;
+	}
+
+	editMember(member);
+}
+
+void searchMember()
+{
+	PERSON * member = getMemberByInformation();
+
+	if (!member)
+	{
+		printf("%s\n", message_nobodyMatched);
+		getch();
+		return;
+	}
+
+	printMember(member);
+	getch();
 }
 
 void saveMemberDataToFile()
@@ -105,27 +121,32 @@ void saveMemberDataToFile()
 	FILE * dataFile = openDataFile("w");
 	fprintf(dataFile, "%s\t%s\t%s\t%s\n", string_memberId, string_memberName, string_memberAddress, string_memberPhone);
 
+	PERSONLIST members = getMemberList();
+
 	int memberIdx;
-	for (memberIdx = 1; memberIdx < getMemberCount(); memberIdx++)
-		fprintf(dataFile, "%d\t%s\t%s\t%s\n", getMember(memberIdx)->memberId, getMember(memberIdx)->name, getMember(memberIdx)->address, getMember(memberIdx)->phone);
+	for (memberIdx = 0; memberIdx < members.memberCnt; memberIdx++)
+		fprintf(dataFile, "%d\t%s\t%s\t%s\n", members.member[memberIdx]->memberId, members.member[memberIdx]->name, members.member[memberIdx]->address, members.member[memberIdx]->phone);
 
 	isDataSaved = 1;
 
-	printf("성공적으로 저장되었습니다!\n");
+	printf("%s\n", message_savedSuccessfully);
 	getch();
 }
+
 
 void exitProgram()
 {
 	if (!isDataSaved)
 	{
-		printf("변경 내용이 있습니다!\n");
-		printf("변경 내용을 저장하시겠습니까?\n");
+		printf("%s\n", message_changeExist);
+		printf("%s\n", message_saveChangeQuestion);
 
-		char * choiceList[] = { "예", "아니요" };	
-		if (choiceFromList(choiceList, sizeof(choiceList) / sizeof(char *), 2) == 0)
+		char * choiceList[] = { string_yes, string_no };	
+		if (choiceFromList(choiceList, sizeof(choiceList) / sizeof(char *), 3) == 0)
 			saveMemberDataToFile();
 	}
 
+	clearScreen();
+	printf("%s\n", message_exitProgram);
 	exit(0);
 }

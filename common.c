@@ -1,5 +1,25 @@
 #include "common.h"
 
+void throwException(int exception)
+{
+	assert(exception);
+}
+
+int getChoice(char * string_list[], int listCount)
+{
+	int i, op;
+
+	for (i = 0; i < listCount; i++)
+		printf("%d. %s\n", i + 1, string_list[i]);
+
+	scanf(" %d", &op);
+
+	if (!(1 <= op && op <= listCount))
+		return -1;
+
+	else return op;
+}
+
 int getString(char * str, int size, int (checkFunc)(char *))
 {
 	int res;
@@ -29,7 +49,7 @@ int choiceFromList(char * choiceList[], int choiceCount, int startPosition)
 		switch (keyInput)
 		{
 		case KEY_UP:
-			if (nowPosition <= 2)
+			if (nowPosition <= startPosition)
 			{
 				playShortBeep();
 				break;
@@ -37,17 +57,17 @@ int choiceFromList(char * choiceList[], int choiceCount, int startPosition)
 
 			setCursorPosition(1, nowPosition);
 			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
-			printf("%s\n", choiceList[nowPosition - 2]);
+			printf("%s\n", choiceList[nowPosition - startPosition]);
 
 			nowPosition--;
 
 			setCursorPosition(1, nowPosition);
 			setTextColor(BACKGROUND_INTENSITY);
-			printf("%s\n", choiceList[nowPosition - 2]);
+			printf("%s\n", choiceList[nowPosition - startPosition]);
 			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
 			break;
 		case KEY_DOWN:
-			if (nowPosition >= 3)
+			if (nowPosition > startPosition)
 			{
 				playShortBeep();
 				break;
@@ -55,17 +75,17 @@ int choiceFromList(char * choiceList[], int choiceCount, int startPosition)
 
 			setCursorPosition(1, nowPosition);
 			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
-			printf("%s\n", choiceList[nowPosition - 2]);
+			printf("%s\n", choiceList[nowPosition - startPosition]);
 
 			nowPosition++;
 
 			setCursorPosition(1, nowPosition);
 			setTextColor(BACKGROUND_INTENSITY);
-			printf("%s\n", choiceList[nowPosition - 2]);
+			printf("%s\n", choiceList[nowPosition - startPosition]);
 			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
 			break;
 		case KEY_RETURN:
-			return nowPosition - 2;
+			return nowPosition - startPosition;
 			break;
 		}
 	}
@@ -100,7 +120,7 @@ void readMemberDataFromFile()
 	fclose(dataFile);
 }
 
-int nameCheck(char * str)
+int checkNameValid(char * str)
 {
 	// rule: korean character
 
@@ -114,11 +134,10 @@ int nameCheck(char * str)
 	return 0;
 }
 
-int phoneCheck(char * str)
+int checkPhoneValid(char * str)
 {
 	// rule: [0-9]{3}-[0-9]{4}-[0-9]{4}
 
-	int memberIdx;
 	char * token, *destPtr;
 
 	int cnt;
@@ -155,11 +174,76 @@ int phoneCheck(char * str)
 
 	// check duplicated
 
-	for (memberIdx = 1; memberIdx < getMemberCount(); memberIdx++)
-	{
-		if (!strcmp(getMember(memberIdx)->phone, str))
-			return PHONE_DUPLICATED;
-	}
+	if (findMemberByPhone(str) != NULL)
+		return PHONE_DUPLICATED;
 
 	return 0;
+}
+
+int changeMemberName(PERSON * member, STRING str)
+{
+	// check name is valid
+	int res;
+	res = checkNameValid(str);
+	
+	switch (res)
+	{
+	case 0:
+		strcpy(member->name, str);
+		return 0;
+	case NAME_NOT_KOREAN:
+		printf("%s\n", nameNotKorean);
+		printf("%s\n", inputNameHelp);
+		break;
+	}
+
+	return -1;
+}
+
+int changeMemberAddress(PERSON * member, STRING str)
+{
+	strcpy(member->address, str);
+	return 0;
+}
+
+int changeMemberPhone(PERSON * member, STRING str)
+{
+	// check phone is valid
+	int res;
+	res = checkPhoneValid(str);
+
+	switch (res)
+	{
+	case 0:
+		strcpy(member->phone, str);
+		return 0;
+	case WRONG_INPUT:
+		printf("%s\n", wrongInput);
+		printf("%s\n", inputPhoneHelp);
+		break;
+	case PHONE_NOT_DIGIT:
+		printf("%s\n", phoneNotDigit);
+		printf("%s\n", inputPhoneHelp);
+		break;
+	case PHONE_DUPLICATED:
+		printf("%s\n", phoneDuplicated);
+		break;
+	}
+
+	return -1;
+}
+
+PERSON * choiceDuplicatedOne(PERSONLIST personList)
+{
+	// choice one in personList
+	int choice = 0;
+	int i;
+
+	printf("%s\n", message_matchedManyMembers);
+
+	for (i = 0; i < personList.memberCnt; i++)
+		printf("%d. %d\n", i + 1, personList.member[i]->memberId);
+	scanf(" %d", &choice);
+
+	return personList.member[choice - 1];
 }

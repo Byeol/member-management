@@ -48,10 +48,12 @@ void setTextColor(int Color)
 int getKeyInput()
 {
 	short isEscPress = 0;
+	short isReturnPress;
 
 	while (!isEscPress)
 	{
 		isEscPress = GetAsyncKeyState(VK_ESCAPE);
+		isReturnPress = abs(GetKeyState(VK_RETURN)) % 2;
 
 		if (GetAsyncKeyState(VK_UP) & SHRT_MAX)
 			return KEY_UP;
@@ -61,7 +63,7 @@ int getKeyInput()
 			return KEY_LEFT;
 		else if (GetAsyncKeyState(VK_RIGHT) & SHRT_MAX)
 			return KEY_RIGHT;
-		else if ((GetKeyState(VK_RETURN) & SHRT_MAX) == 1)
+		else if (isReturnPress != abs(GetKeyState(VK_RETURN)) % 2)
 			return KEY_RETURN;
 	}
 

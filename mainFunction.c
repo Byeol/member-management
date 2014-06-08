@@ -1,14 +1,16 @@
 #include "common.h"
 
-void printMemberList()
+void printMemberList(PERSONLIST * members)
 {
 	int memberCnt;
 	int pageOp;
-	int startIdx = 1, endIdx = startIdx + printLineLength;
+	int startIdx = 0, endIdx = startIdx + printLineLength;
 
-	memberCnt = getMemberCount();
-	
-	while (pageOp = printMemberInRange(startIdx, endIdx))
+	memberCnt = members->memberCnt;
+	if (endIdx > memberCnt)
+		endIdx = memberCnt - 1;
+
+	while (pageOp = printMemberInRange(members, startIdx, endIdx))
 	{
 		switch (pageOp)
 		{
@@ -22,7 +24,7 @@ void printMemberList()
 			startIdx -= printLineLength + 1;
 			break;
 		case PAGE_RIGHT:
-			if (endIdx >= memberCnt)
+			if (endIdx >= memberCnt - 1)
 			{
 				playShortBeep();
 				break;
@@ -34,11 +36,11 @@ void printMemberList()
 
 		endIdx = startIdx + printLineLength;
 		if (endIdx > memberCnt)
-			endIdx = memberCnt;
+			endIdx = memberCnt - 1;
 	}
 }
 
-int printMemberInRange(int startIdx, int endIdx)
+int printMemberInRange(PERSONLIST * members, int startIdx, int endIdx)
 {
 	int memberIdx;
 	PERSON * member;
@@ -46,16 +48,19 @@ int printMemberInRange(int startIdx, int endIdx)
 	int keyInput;
 	setCursorPosition(1, nowPosition);
 	
+	if (endIdx > members->memberCnt)
+		throwException(1);
+
 	clearScreen();
 	for (memberIdx = startIdx; memberIdx <= endIdx; memberIdx++)
 	{
-		member = getMember(memberIdx);
+		member = members->member[memberIdx];
 		printMember(member);
 	}
 
 	setCursorPosition(1, nowPosition);
 	setTextColor(BACKGROUND_INTENSITY);
-	printMember(getMember(startIdx + nowPosition - 1));
+	printMember(members->member[startIdx + nowPosition - 1]);
 	setTextColor(DEFAULT_TEXT_ATTRIBUTE);
 
 	while (keyInput = getKeyInput())
@@ -71,13 +76,13 @@ int printMemberInRange(int startIdx, int endIdx)
 
 			setCursorPosition(1, nowPosition);
 			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
-			printMember(getMember(startIdx + nowPosition - 1));
+			printMember(members->member[startIdx + nowPosition - 1]);
 
 			nowPosition--;
 
 			setCursorPosition(1, nowPosition);
 			setTextColor(BACKGROUND_INTENSITY);
-			printMember(getMember(startIdx + nowPosition - 1));
+			printMember(members->member[startIdx + nowPosition - 1]);
 			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
 			break;
 		case KEY_DOWN:
@@ -89,13 +94,13 @@ int printMemberInRange(int startIdx, int endIdx)
 
 			setCursorPosition(1, nowPosition);
 			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
-			printMember(getMember(startIdx + nowPosition - 1));
+			printMember(members->member[startIdx + nowPosition - 1]);
 
 			nowPosition++;
 
 			setCursorPosition(1, nowPosition);
 			setTextColor(BACKGROUND_INTENSITY);
-			printMember(getMember(startIdx + nowPosition - 1));
+			printMember(members->member[startIdx + nowPosition - 1]);
 			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
 			break;
 		case KEY_LEFT:
@@ -116,4 +121,130 @@ void printMember(PERSON * member)
 void addMember(PERSON * member)
 {
 	insertMember(member);
+}
+
+void removeMember(PERSON * member)
+{
+	removeMemberById(member->memberId);
+}
+
+void editMember(PERSON * member)
+{
+	int i;
+	int op;
+	int res;
+
+	char changeString[100];
+	STRING destPointer_list[3] =
+	{
+		member->name,
+		member->address,
+		member->phone
+	};
+
+	int (*func_list[3])(PERSON *, STRING) = 
+	{
+		changeMemberName,
+		changeMemberAddress,
+		changeMemberPhone
+	};
+
+	int (*opFunc)(PERSON *, STRING);
+
+	char * string_list[3] = {
+		string_memberName,
+		string_memberAddress,
+		string_memberPhone
+	};
+
+	printf("%s\n", message_choiceInformationToChange);
+	for (i = 0; i < 3; i++)
+		printf("%d. %s\n", i + 1, string_list[i]);
+	scanf(" %d", &op);
+	opFunc = func_list[op - 1];
+
+	printf("%s%s%s%s%s\n", message_informationOfMember, string_list[op - 1], message_is, destPointer_list[op - 1], message_isB);
+	printf("%s%s%s\n", message_informationToChange, string_list[op - 1], message_enter);
+
+	do
+	{
+		getString(changeString, sizeof(changeString), NULL);
+		res = opFunc(member, changeString);
+
+		if (res == WRONG_INPUT)
+			printf("%s%s%s", message_informationToChange, string_list[op - 1], message_enterAgain);
+
+	} while (res);
+}
+
+PERSON * getMemberByInformation()
+{
+	int i;
+	int op;
+
+	PERSON * member;
+	char targetString[100];
+
+	char * information_string[3] = {
+		string_memberId,
+		string_memberName,
+		string_memberPhone
+	};
+
+	PERSON *(*func_list[3])(STRING) =
+	{
+		findMemberById,
+		findMemberByName,
+		findMemberByPhone
+	};
+	PERSON *(*opFunc)(STRING);
+
+	printf("%s\n", message_choiceInformationToSearch);
+	for (i = 0; i < 3; i++)
+		printf("%d. %s\n", i + 1, information_string[i]);
+
+	scanf(" %d", &op);
+
+	printf("%s%s%s\n", message_informationOfMemberToFind , information_string[op - 1], message_enter);
+	scanf(" %[^\n]", targetString);
+	opFunc = func_list[op - 1];
+
+	if (op==1)
+		member = findMemberById(atoi(targetString));
+	else
+		member = opFunc(targetString);
+
+	return member;
+}
+
+void getMemberInformation(PERSON * member)
+{
+	int i;
+	int res;
+	char str[100];
+
+	int(*func_list[3])(PERSON *, STRING) =
+	{
+		changeMemberName,
+		changeMemberAddress,
+		changeMemberPhone
+	};
+	int(*opFunc)(PERSON *, STRING);
+
+	char * string_list[3] = {
+		string_memberName,
+		string_memberAddress,
+		string_memberPhone
+	};
+
+	for (i = 0; i < 3; i++)
+	{
+		opFunc = func_list[i];
+		printf("%s\n", string_list[i], message_enter);
+		do
+		{
+			getString(str, sizeof(str), NULL);
+			res = opFunc(member, str);
+		} while (res);
+	}
 }
