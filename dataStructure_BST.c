@@ -98,6 +98,16 @@ void insertMember(PERSON * member)
 
 void removeMemberById(int memberId)
 {
+	NODE * node = findNode(rootNode, memberId);
+
+	if (node == rootNode)
+	{
+		node->parent = createNode(-1, NULL);
+		node->parent->right = rootNode;
+		deleteNode(rootNode, memberId);
+		rootNode = node->parent->right;
+	}
+
 	deleteNode(rootNode, memberId);
 }
 

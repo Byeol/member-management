@@ -1,5 +1,16 @@
 #include "binarySearchTree.h"
 
+NODE * createNode(int key, NODEDATA * value)
+{
+	NODE * node = malloc(sizeof(NODE));
+	node->key = key;
+	node->value = value;
+	node->parent = NULL;
+	node->left = NULL;
+	node->right = NULL;
+	return node;
+}
+
 NODE * findNode(NODE * rootNode, int key)
 {
 	if (rootNode == NULL)
@@ -13,17 +24,59 @@ NODE * findNode(NODE * rootNode, int key)
 		return findNode(rootNode->right, key);
 }
 
-NODE * createNode(int key, NODEDATA * value)
+void insertNode(NODE * rootNode, int key, NODEDATA * value)
 {
-	NODE * node = malloc(sizeof(NODE));
-	node->key = key;
-	node->value = value;
-	node->left = NULL;
-	node->right = NULL;
-	return node;
+	NODE * newNode = createNode(key, value);
+	NODE * parentNode = findParentNode(rootNode, key);
+	if (parentNode == NULL)
+	{
+		throwException(1);
+		return;
+	}
+	newNode->parent = parentNode;
+
+	if (key < parentNode->key && !parentNode->left)
+		parentNode->left = newNode;
+	else if (key > parentNode->key && !parentNode->right)
+		parentNode->right = newNode;
+	else
+		throwException(2);
 }
 
-NODE ** findPosition(NODE * rootNode, int key)
+void deleteNode(NODE * rootNode, int key)
+{
+	NODE * targetNode = findNode(rootNode, key);
+	NODE * successorNode;
+
+	if (targetNode == NULL)
+		return;
+
+	if (targetNode->left && targetNode->right) // both children
+	{
+		successorNode = findMinNode(targetNode->right);
+		targetNode->key = successorNode->key;
+		targetNode->value = successorNode->value;
+		deleteNode(successorNode, successorNode->key);
+	}
+	else if (targetNode->left) // only left child
+		replaceNodeInParent(targetNode, targetNode->left);
+	else if (targetNode->right) // only right child
+		replaceNodeInParent(targetNode, targetNode->right);
+	else // no children
+		replaceNodeInParent(targetNode, NULL);
+}
+
+void traverseNode(NODE * rootNode, void(*callbackFunc)(NODEDATA *))
+{
+	if (rootNode == NULL)
+		return;
+
+	traverseNode(rootNode->left, callbackFunc);
+	callbackFunc(rootNode->value);
+	traverseNode(rootNode->right, callbackFunc);
+}
+
+static NODE * findParentNode(NODE * rootNode, int key)
 {
 	NODE ** targetPos = NULL;
 
@@ -38,32 +91,33 @@ NODE ** findPosition(NODE * rootNode, int key)
 		return NULL;
 
 	if (*targetPos)
-		return findPosition(*targetPos, key);
+		return findParentNode(*targetPos, key);
 	else
-		return targetPos;
+		return rootNode;
 }
 
-void insertNode(NODE * rootNode, int key, NODEDATA * value)
+static NODE * findMinNode(NODE * rootNode)
 {
-	NODE * newNode = createNode(key, value);
-	NODE ** newNodePos = findPosition(rootNode, key);
+	NODE * curNode = rootNode;
 
-	if (newNodePos != NULL)
-		*newNodePos = newNode;
-	else
-		throwException(2);
+	while (curNode->left)
+		curNode = curNode->left;
+
+	return curNode;
 }
 
-void deleteNode(NODE * rootNode, int key)
+static void replaceNodeInParent(NODE * node, NODE * destNode)
 {
-}
+	NODE ** targetPos = NULL;
 
-void traverseNode(NODE * rootNode, void(*callbackFunc)(NODEDATA *))
-{
-	if (rootNode == NULL)
-		return;
+	if (node->parent)
+	{
+		if (node->parent->left == node)
+			node->parent->left = destNode;
+		else if (node->parent->right == node)
+			node->parent->right = destNode;
 
-	traverseNode(rootNode->left, callbackFunc);
-	callbackFunc(rootNode->value);
-	traverseNode(rootNode->right, callbackFunc);
+		if (destNode)
+			destNode->parent = node->parent;
+	}
 }

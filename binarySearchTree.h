@@ -11,6 +11,7 @@ typedef struct _NODEDATA {
 typedef struct _NODE {
 	int key;
 	NODEDATA * value;
+	struct _NODE * parent;
 	struct _NODE * left;
 	struct _NODE * right;
 } NODE;
@@ -20,5 +21,9 @@ NODE * findNode(NODE * rootNode, int key);
 void insertNode(NODE * rootNode, int key, NODEDATA * value);
 void deleteNode(NODE * rootNode, int key);
 void traverseNode(NODE * rootNode, void(*callbackFunc)(NODEDATA *));
+
+static NODE * findParentNode(NODE * rootNode, int key);
+static NODE * findMinNode(NODE * rootNode);
+static void replaceNodeInParent(NODE * node, NODE * destNode);
 
 #endif
