@@ -30,17 +30,19 @@ int main()
 
 	setConsolePreference();
 	readMemberDataFromFile();
+	isDataSaved = 1;
 
 	while (1)
 	{
 		clearScreen();
-		printf("%s\n\n", programName);
+		printf("%s", programName);
 
-		op = getChoice(string_list, sizeof(string_list) / sizeof(char *));
+		op = choiceFromList(string_list, sizeof(string_list) / sizeof(char *), 3);
+
 		if (op == -1)
 			continue;
 
-		void(*opFunc)() = func_list[op - 1];
+		void(*opFunc)() = func_list[op];
 		clearScreen();
 		opFunc();
 	}
@@ -52,8 +54,7 @@ void printAllMember()
 
 	if (!members.memberCnt)
 	{
-		printf("%s\n", message_nobodyExist);
-		getch();
+		printNotification(message_nobodyExist);
 		return;
 	}
 
@@ -69,49 +70,65 @@ void createNewMember()
 	printf("%s: %d\n", string_memberId, newMember->memberId);
 
 	getMemberInformation(newMember);
-	addMember(newMember);
-	isDataSaved = 0;
+
+	if (addMember(newMember) == 0)
+	{
+		isDataSaved = 0;
+		printNotification(message_createdSuccessfully);
+	}
 }
 
 void removeMemberByInformation()
 {
 	PERSON * member = getMemberByInformation();
+	if (member == (PERSON *) -1)
+		return;
 
 	if (!member)
 	{
-		printf("%s\n", message_nobodyMatched);
-		getch();
+		printNotification(message_nobodyMatched);
 		return;
 	}
 
-	removeMember(member);
+	if (removeMember(member) == 0)
+	{
+		isDataSaved = 0;
+		printNotification(message_removedSuccessfully);
+	}
 }
 
 void editMemberByInformation()
 {
 	PERSON * member = getMemberByInformation();
+	if (member == (PERSON *) -1)
+		return;
 
 	if (!member)
 	{
-		printf("%s\n", message_nobodyMatched);
-		getch();
+		printNotification(message_nobodyMatched);
 		return;
 	}
 
-	editMember(member);
+	if (editMember(member) == 0)
+	{
+		isDataSaved = 0;
+		printNotification(message_editedSuccessfully);
+	}
 }
 
 void searchMember()
 {
 	PERSON * member = getMemberByInformation();
+	if (member == (PERSON *) -1)
+		return;
 
 	if (!member)
 	{
-		printf("%s\n", message_nobodyMatched);
-		getch();
+		printNotification(message_nobodyMatched);
 		return;
 	}
 
+	clearScreen();
 	printMember(member);
 	getch();
 }
@@ -129,10 +146,8 @@ void saveMemberDataToFile()
 
 	isDataSaved = 1;
 
-	printf("%s\n", message_savedSuccessfully);
-	getch();
+	printNotification(message_savedSuccessfully);
 }
-
 
 void exitProgram()
 {
@@ -146,7 +161,6 @@ void exitProgram()
 			saveMemberDataToFile();
 	}
 
-	clearScreen();
-	printf("%s\n", message_exitProgram);
+	printNotification(message_exitProgram);
 	exit(0);
 }

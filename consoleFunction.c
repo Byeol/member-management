@@ -47,23 +47,23 @@ void setTextColor(int Color)
 
 int getKeyInput()
 {
-	short isEscPress = 0;
-	short isReturnPress;
-
-	while (!isEscPress)
+	int input;
+	while ((input = getch()) != 27)
 	{
-		isEscPress = GetAsyncKeyState(VK_ESCAPE);
-		isReturnPress = abs(GetKeyState(VK_RETURN)) % 2;
+		if (input == 224)
+		{
+			input = getch();
 
-		if (GetAsyncKeyState(VK_UP) & SHRT_MAX)
-			return KEY_UP;
-		else if (GetAsyncKeyState(VK_DOWN) & SHRT_MAX)
-			return KEY_DOWN;
-		else if (GetAsyncKeyState(VK_LEFT) & SHRT_MAX)
-			return KEY_LEFT;
-		else if (GetAsyncKeyState(VK_RIGHT) & SHRT_MAX)
-			return KEY_RIGHT;
-		else if (isReturnPress != abs(GetKeyState(VK_RETURN)) % 2)
+			if (input == 72)
+				return KEY_UP;
+			else if (input == 75)
+				return KEY_LEFT;
+			else if (input == 77)
+				return KEY_RIGHT;
+			else if (input == 80)
+				return KEY_DOWN;
+		}
+		else if (input == 13)
 			return KEY_RETURN;
 	}
 

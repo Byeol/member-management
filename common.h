@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <conio.h>
 #include <ctype.h>
 #include <assert.h>
 #include <Windows.h>
@@ -22,7 +23,7 @@ typedef void(*funcPointer)();
 typedef char * STRING;
 
 void throwException(int exception);
-int getChoice(char * string_list[], int listCount);
+void printNotification(STRING message);
 int getString(char * str, int size, int (checkFunc)(char *));
 int choiceFromList(char * choiceList[], int choiceCount, int startPosition);
 FILE * openDataFile(char *opt);

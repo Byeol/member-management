@@ -5,19 +5,11 @@ void throwException(int exception)
 	assert(exception);
 }
 
-int getChoice(char * string_list[], int listCount)
+void printNotification(STRING message)
 {
-	int i, op;
-
-	for (i = 0; i < listCount; i++)
-		printf("%d. %s\n", i + 1, string_list[i]);
-
-	scanf(" %d", &op);
-
-	if (!(1 <= op && op <= listCount))
-		return -1;
-
-	else return op;
+	clearScreen();
+	printf("%s\n", message);
+	getch();
 }
 
 int getString(char * str, int size, int (checkFunc)(char *))
@@ -36,6 +28,7 @@ int choiceFromList(char * choiceList[], int choiceCount, int startPosition)
 	int i;
 	int nowPosition = startPosition;
 	int keyInput;
+	int movePosition;
 
 	setCursorPosition(1, nowPosition);
 	setTextColor(BACKGROUND_INTENSITY);
@@ -46,49 +39,42 @@ int choiceFromList(char * choiceList[], int choiceCount, int startPosition)
 
 	while (keyInput = getKeyInput())
 	{
+		movePosition = 0;
+
 		switch (keyInput)
 		{
 		case KEY_UP:
-			if (nowPosition <= startPosition)
-			{
-				playShortBeep();
-				break;
-			}
-
-			setCursorPosition(1, nowPosition);
-			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
-			printf("%s\n", choiceList[nowPosition - startPosition]);
-
-			nowPosition--;
-
-			setCursorPosition(1, nowPosition);
-			setTextColor(BACKGROUND_INTENSITY);
-			printf("%s\n", choiceList[nowPosition - startPosition]);
-			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
+			movePosition = -1;
 			break;
 		case KEY_DOWN:
-			if (nowPosition > startPosition)
-			{
-				playShortBeep();
-				break;
-			}
-
-			setCursorPosition(1, nowPosition);
-			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
-			printf("%s\n", choiceList[nowPosition - startPosition]);
-
-			nowPosition++;
-
-			setCursorPosition(1, nowPosition);
-			setTextColor(BACKGROUND_INTENSITY);
-			printf("%s\n", choiceList[nowPosition - startPosition]);
-			setTextColor(DEFAULT_TEXT_ATTRIBUTE);
+			movePosition = +1;
 			break;
 		case KEY_RETURN:
 			return nowPosition - startPosition;
 			break;
+		default:
+			break;
 		}
+
+		if (!(startPosition <= nowPosition + movePosition && nowPosition + movePosition <= startPosition + choiceCount - 1))
+		{
+			playShortBeep();
+			continue;
+		}
+
+		setCursorPosition(1, nowPosition);
+		setTextColor(DEFAULT_TEXT_ATTRIBUTE);
+		printf("%s\n", choiceList[nowPosition - startPosition]);
+
+		nowPosition += movePosition;
+
+		setCursorPosition(1, nowPosition);
+		setTextColor(BACKGROUND_INTENSITY);
+		printf("%s\n", choiceList[nowPosition - startPosition]);
+		setTextColor(DEFAULT_TEXT_ATTRIBUTE);
 	}
+
+	return -1;
 }
 
 FILE * openDataFile(char *opt)
@@ -124,10 +110,10 @@ int checkNameValid(char * str)
 {
 	// rule: korean character
 
-	int i;
-	for (i = 0; i < strlen(str); i++)
+	unsigned int idx;
+	for (idx = 0; idx < strlen(str); idx++)
 	{
-		if ((str[i] & 0x80) != 0x80)
+		if ((str[idx] & 0x80) != 0x80)
 			return NAME_NOT_KOREAN;
 	}
 
@@ -237,13 +223,12 @@ PERSON * choiceDuplicatedOne(PERSONLIST personList)
 {
 	// choice one in personList
 	int choice = 0;
-	int i;
 
-	printf("%s\n", message_matchedManyMembers);
+	printNotification(message_matchedManyMembers);
 
-	for (i = 0; i < personList.memberCnt; i++)
-		printf("%d. %d\n", i + 1, personList.member[i]->memberId);
-	scanf(" %d", &choice);
+	choice = printMemberInRange(&personList, 0, personList.memberCnt-1, 1);
+	if (choice == -1)
+		return (PERSON *) -1;
 
 	return personList.member[choice - 1];
 }

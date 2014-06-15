@@ -16,12 +16,12 @@ NODE * findNode(NODE * rootNode, int key)
 	if (rootNode == NULL)
 		return NULL;
 
-	if (key == rootNode->key)
-		return rootNode;
-	else if (key < rootNode->key)
+	if (key < rootNode->key)
 		return findNode(rootNode->left, key);
 	else if (key > rootNode->key)
 		return findNode(rootNode->right, key);
+
+	return rootNode;
 }
 
 void insertNode(NODE * rootNode, int key, NODEDATA * value)
